@@ -14,17 +14,17 @@ function App() {
       {!user ? (
         <Login />
       ) : (
-        <div className="app__body">
-          <Router>
-            <Sidebar />
-            <Switch>
-              <Route path="/rooms/:roomId">
-                <Chat />
-              </Route>
-            </Switch>
-          </Router>
-        </div>
-      )}
+          <div className="app__body">
+            <Router>
+              <Sidebar />
+              <Switch>
+                <Route path="/rooms/:roomId">
+                  <Chat />
+                </Route>
+              </Switch>
+            </Router>
+          </div>
+        )}
     </div>
   );
 }
