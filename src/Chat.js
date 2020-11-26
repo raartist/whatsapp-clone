@@ -10,13 +10,16 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import "./Chat.css";
 import db from "./firebase";
+import firebase from "firebase"
+import { useStateValue } from "./StateProvider";
 
 function Chat() {
   const [seed, setSeed] = useState("");
   const [input, setInput] = useState("");
   const { roomId } = useParams();
   const [roomName, setRoomName] = useState("");
-  const [message, setMessage] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [{ user }, dispatch] = useStateValue();
 
   useEffect(() => {
     if (roomId) {
@@ -24,19 +27,33 @@ function Chat() {
         .doc(roomId)
         .onSnapshot((snapshot) => setRoomName(snapshot.data().name));
 
-
+      db.collection("rooms")
+        .doc(roomId)
+        .collection("messages").orderBy('timestamp', 'asc')
+        .onSnapshot(snapshot => (
+          setMessages(snapshot.docs.map(doc => doc.data()))))
     }
   }, [roomId]);
 
   useEffect(() => {
     setSeed(Math.floor(Math.random() * 5000));
+
   }, [roomId]);
 
   const sendMessage = (e) => {
     e.preventDefault();
     console.log("you typed >>>", input);
+    db.collection("rooms")
+      .doc(roomId)
+      .collection("messages")
+      .add({
+        message: input,
+        name: user.displayName,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      })
     setInput("");
   };
+
 
   return (
     <div className="chat">
@@ -44,10 +61,13 @@ function Chat() {
         <Avatar
           src={`https://avatars.dicebear.com/api/human/${seed}.svg`}
         ></Avatar>
+
         <div className="chat__headerInfo">
           <h3>{roomName}</h3>
-          <p>Last seen at...</p>
+          <p>last seen {" "}
+          </p>
         </div>
+
         <div className="chat_headerRight">
           <IconButton>
             <SearchOutlined />
@@ -61,11 +81,17 @@ function Chat() {
         </div>
       </div>
       <div className="chat__body">
-        <p className={`chat__message ${true && "chat__receiver"}`}>
-          <span className="chat__name">raartist</span>
-          Hello everyone
-          <span className="chat__timestamp">2:55PM</span>
-        </p>
+        {messages.map(message => (
+          <p className={`chat__message ${message.name === user.displayName && "chat__receiver"}`}>
+            <span className="chat__name">{message.name}</span>
+            {message.message}
+            <span className="chat__timestamp">
+              {new Date(message.timestamp?.toDate()).toUTCString()}
+            </span>
+          </p>
+        ))
+        }
+
       </div>
       <div className="chat__footer">
         <IconButton>
